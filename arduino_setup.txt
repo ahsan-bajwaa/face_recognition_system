@@ -1,0 +1,96 @@
+# Arduino Setup Instructions for Face Recognition System
+
+This guide provides detailed steps to set up the Arduino hardware and software for the face recognition system on a Windows PC.
+
+## Hardware Requirements
+
+- Arduino board (e.g., Arduino Uno)
+- USB cable (USB-A to USB-B for Uno)
+- 16x2 I2C LCD display (address 0x27)
+- LED with 220Ω resistor
+- Jumper wires
+- Breadboard (optional)
+
+## Step-by-Step Setup
+
+### 1. Install Arduino IDE
+
+- Download the Arduino IDE from https://www.arduino.cc/en/software.
+- Run the installer and follow the prompts to install.
+- Open the Arduino IDE to verify it works.
+
+### 2. Connect the Arduino
+
+- Connect the Arduino to your Windows PC using the USB cable.
+- Windows should install drivers automatically. If not, download drivers from https://www.arduino.cc/en/Guide/Windows.
+- Open Device Manager (Win + X, then "Device Manager").
+- Under "Ports (COM & LPT)", note the COM port (e.g., COM3).
+- Update the ARDUINO_PORT variable in face_recog_mobile.py to match (e.g., ARDUINO_PORT = "COM3").
+
+### 3. Wire the Components
+
+- **LCD Wiring** (16x2 I2C LCD):
+  - VCC: Connect to Arduino 5V
+  - GND: Connect to Arduino GND
+  - SDA: Connect to Arduino A4
+  - SCL: Connect to Arduino A5
+- **LED Wiring**:
+  - LED anode: Connect to Arduino pin 8 via a 220Ω resistor
+  - LED cathode: Connect to Arduino GND
+- Use a breadboard for easier connections if needed.
+
+### 4. Install Arduino Libraries
+
+- Open Arduino IDE.
+- Go to Sketch &gt; Include Library &gt; Manage Libraries.
+- Search for "LiquidCrystal I2C" by Frank de Brabander and install it.
+- The Wire library is included by default.
+
+### 5. Upload the Arduino Code
+
+- Open face_recog_mobile_Arduino.txt in a text editor.
+- Copy the code and paste it into a new Arduino sketch (File &gt; New in Arduino IDE).
+- Save the sketch as face_recog_mobile_Arduino.ino.
+- Select your board: Tools &gt; Board &gt; Arduino Uno (or your board model).
+- Select the COM port: Tools &gt; Port &gt; COM3 (replace with your port).
+- Click the Upload button (right arrow) to upload the code.
+- The LCD should display "Waiting for data" after uploading.
+
+### 6. Test the Arduino
+
+- Ensure the Python script is running with the virtual environment activated:
+
+  ```
+  cd C:\Users\<YourUsername>\face_recognition_project
+  venv\Scripts\activate
+  python face_recog_mobile.py
+  ```
+- Select option 2 (Verify faces) to test communication.
+- The LCD should show:
+  - "Waiting for data" when no face is detected.
+  - "Unknown/No Match" for unrecognized faces.
+  - "Face Matched!" with username and status (Entry/Exit) for recognized faces.
+- The LED should light up when a face is matched.
+
+## Troubleshooting
+
+- **Serial Port Issues**:
+  - Verify the COM port in Device Manager.
+  - Run the following in Python to list ports:
+
+    ```
+    python -c "import serial.tools.list_ports; print([port.device for port in serial.tools.list_ports.comports()])"
+    ```
+  - Ensure no other program (e.g., Arduino IDE Serial Monitor) is using the port.
+- **LCD Not Displaying**:
+  - Check wiring connections.
+  - Verify the I2C address (0x27). Use an I2C scanner sketch if needed.
+- **LED Not Working**:
+  - Ensure the LED is connected to pin 8 with a resistor.
+  - Test the LED with a simple Arduino sketch to confirm it works.
+
+## Notes
+
+- Keep the Arduino connected to the PC during operation, as the Python script communicates via serial.
+- Ensure the Python script uses the correct COM port to avoid connection errors.
+- Close the Arduino IDE Serial Monitor before running the Python script to free the COM port.
