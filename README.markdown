@@ -151,7 +151,4 @@ face-recognition-system/
 - **Python Library Issues**:
   - Ensure `dlib` and `face_recognition` are installed correctly.
   - Use Python 3.7–3.11 for compatibility.
-
-## License
-
-This project is licensed under Aaa.
+  
