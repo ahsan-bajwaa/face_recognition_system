@@ -1,0 +1,131 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Initialize LCD at I2C address 0x27 for 16x2 display
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// LED Pin
+const int ledPin = 8;
+
+// State tracking
+enum DisplayState {
+  WAITING,
+  NO_MATCH,
+  MATCH
+};
+
+// Timing variables
+unsigned long lastMessageTime = 0;
+unsigned long lastFaceDetectionTime = 0;
+const unsigned long FACE_TIMEOUT = 1000; // 1 second
+DisplayState currentState = WAITING;
+String currentUsername = "";
+String currentStatus = "";
+
+void setup() {
+  Wire.begin();
+  lcd.init();
+  lcd.backlight();
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+
+  Serial.begin(9600);
+  while (!Serial); // Wait for serial connection
+  
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Waiting for data");
+  currentState = WAITING;
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+  
+  // Check for serial data
+  if (Serial.available() > 0) {
+    String input = Serial.readStringUntil('\n');
+    input.trim();
+    
+    int colonIndex = input.indexOf(':');
+    String username = "";
+    String status = "";
+    
+    if (colonIndex != -1) {
+      username = input.substring(0, colonIndex);
+      status = input.substring(colonIndex + 1);
+    } else {
+      status = input;
+    }
+    
+    processMessage(username, status);
+    lastMessageTime = currentTime;
+  }
+  
+  // Handle state timeouts
+  if (currentState != WAITING && (currentTime - lastMessageTime) > FACE_TIMEOUT) {
+    if ((currentTime - lastFaceDetectionTime) > FACE_TIMEOUT) {
+      setWaitingState();
+    }
+  }
+}
+
+void processMessage(String username, String status) {
+  if (status == "Waiting") {
+    setWaitingState();
+  } 
+  else if (status == "No Match Found") {
+    setNoMatchState();
+  } 
+  else if (status == "entered" || status == "exited") {
+    setMatchState(username, status);
+  }
+  
+  lastFaceDetectionTime = millis();
+}
+
+void setWaitingState() {
+  if (currentState != WAITING) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Waiting for data");
+    digitalWrite(ledPin, LOW);
+    currentState = WAITING;
+    currentUsername = "";
+    currentStatus = "";
+  }
+}
+
+void setNoMatchState() {
+  if (currentState != NO_MATCH) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Unknown/No Match");
+    digitalWrite(ledPin, LOW);
+    currentState = NO_MATCH;
+    currentUsername = "";
+    currentStatus = "";
+  }
+}
+
+void setMatchState(String username, String status) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Face Matched!");
+  lcd.setCursor(0, 1);
+  
+  String displayText = username + " (";
+  displayText += (status == "entered" ? "Entry" : "Exit");
+  displayText += ")";
+  
+  // Ensure the text fits on the display
+  if (displayText.length() > 16) {
+    displayText = displayText.substring(0, 16);
+  }
+  
+  lcd.print(displayText);
+  digitalWrite(ledPin, HIGH);
+  
+  currentState = MATCH;
+  currentUsername = username;
+  currentStatus = status;
+}
